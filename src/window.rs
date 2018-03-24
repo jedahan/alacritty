@@ -23,7 +23,7 @@ use glutin::GlContext;
 use MouseCursor;
 
 use cli::Options;
-use config::WindowConfig;
+use config::{WindowConfig, Decorations};
 
 /// Default text for the window's title bar, if not overriden.
 ///
@@ -224,11 +224,7 @@ impl Window {
 
         let title = options.title.as_ref().map_or(DEFAULT_TITLE, |t| t);
         let class = options.class.as_ref().map_or(DEFAULT_CLASS, |c| c);
-        let window_builder = WindowBuilder::new()
-            .with_title(title)
-            .with_visibility(false)
-            .with_transparency(true)
-            .with_decorations(window_config.decorations());
+        let window_builder = Window::get_platform_window(title, window_config);
         let window_builder = Window::platform_builder_ext(window_builder, &class);
         let window = create_gl_window(window_builder.clone(), &event_loop, false)
             .or_else(|_| create_gl_window(window_builder, &event_loop, true))?;
@@ -350,6 +346,52 @@ impl Window {
     #[cfg(not(any(target_os = "linux", target_os = "freebsd", target_os = "dragonfly", target_os = "openbsd")))]
     fn platform_builder_ext(window_builder: WindowBuilder, _: &str) -> WindowBuilder {
         window_builder
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    pub fn get_platform_window(title: &str, window_config: &WindowConfig) -> WindowBuilder {
+        let decorations = match window_config.decorations() {
+            Decorations::None => false,
+            _ => true,
+        };
+
+        WindowBuilder::new()
+            .with_title(title)
+            .with_visibility(false)
+            .with_transparency(true)
+            .with_decorations(decorations)
+    }
+
+    #[cfg(target_os = "macos")]
+    pub fn get_platform_window(title: &str, window_config: &WindowConfig) -> WindowBuilder {
+        use glutin::os::macos::WindowBuilderExt;
+
+        match window_config.decorations() {
+            Decorations::Default => WindowBuilder::new()
+                .with_title(title)
+                .with_visibility(false)
+                .with_transparency(true),
+            Decorations::Transparent => WindowBuilder::new()
+                .with_title(title)
+                .with_title_hidden(true)
+                .with_titlebar_transparent(true)
+                .with_fullsize_content_view(true)
+                .with_visibility(false)
+                .with_transparency(true),
+            Decorations::Buttonless => WindowBuilder::new()
+                .with_title(title)
+                .with_title_hidden(true)
+                .with_titlebar_buttons_hidden(true)
+                .with_titlebar_transparent(true)
+                .with_fullsize_content_view(true)
+                .with_visibility(false)
+                .with_transparency(true),
+            Decorations::None => WindowBuilder::new()
+                .with_title(title)
+                .with_titlebar_hidden(true)
+                .with_visibility(false)
+                .with_transparency(true),
+        }
     }
 
     #[cfg(any(target_os = "linux", target_os = "freebsd", target_os = "dragonfly", target_os = "openbsd"))]
