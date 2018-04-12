@@ -248,10 +248,16 @@ impl Default for Alpha {
 
 #[derive(Debug, Copy, Clone)]
 pub enum Decorations {
-    Default,
+    Full,
     Transparent,
     Buttonless,
     None,
+}
+
+impl Default for Decorations {
+    fn default() -> Decorations {
+        Decorations::Full
+    }
 }
 
 impl<'de> Deserialize<'de> for Decorations {
@@ -265,7 +271,7 @@ impl<'de> Deserialize<'de> for Decorations {
             type Value = Decorations;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                f.write_str("Some subset of default|transparent|buttonless|none")
+                f.write_str("Some subset of full|transparent|buttonless|none")
             }
 
             fn visit_bool<E>(self, value: bool) -> ::std::result::Result<Decorations, E>
@@ -273,7 +279,7 @@ impl<'de> Deserialize<'de> for Decorations {
             {
                 if value {
                     eprintln!("deprecated decorations boolean value, use one of default|transparent|buttonless|none instead; Falling back to \"full\"");
-                    Ok(Decorations::Default)
+                    Ok(Decorations::Full)
                 } else {
                     eprintln!("deprecated decorations boolean value, use one of default|transparent|buttonless|none instead; Falling back to \"none\"");
                     Ok(Decorations::None)
@@ -288,10 +294,10 @@ impl<'de> Deserialize<'de> for Decorations {
                     "transparent" => Ok(Decorations::Transparent),
                     "buttonless" => Ok(Decorations::Buttonless),
                     "none" => Ok(Decorations::None),
-                    "full" => Ok(Decorations::Default),
+                    "full" => Ok(Decorations::Full),
                     _ => {
                         eprintln!("invalid decorations value: {}; Using default value", value);
-                        Ok(Decorations::Default)
+                        Ok(Decorations::Full)
                     }
                 }
             }
@@ -302,18 +308,18 @@ impl<'de> Deserialize<'de> for Decorations {
             {
                 match value {
                     "none" => Ok(Decorations::None),
-                    "full" => Ok(Decorations::Default),
+                    "full" => Ok(Decorations::Full),
                     "transparent" => {
                         eprintln!("macos-only decorations value: {}; Using default value", value);
-                        Ok(Decorations::Default)
+                        Ok(Decorations::Full)
                     },
                     "buttonless" => {
                         eprintln!("macos-only decorations value: {}; Using default value", value);
-                        Ok(Decorations::Default)
+                        Ok(Decorations::Full)
                     }
                     _ => {
                         eprintln!("invalid decorations value: {}; Using default value", value);
-                        Ok(Decorations::Default)
+                        Ok(Decorations::Full)
                     }
                 }
             }
@@ -364,7 +370,7 @@ impl Default for WindowConfig {
         WindowConfig{
             dimensions: Default::default(),
             padding: default_padding(),
-            decorations: Decorations::Default,
+            decorations: Default::default(),
         }
     }
 }
